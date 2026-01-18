@@ -51,6 +51,16 @@ router.get("/", async (req, res) => {
       .orderBy(desc(subjects.createdAt))
       .limit(limitPerPage)
       .offset(offset);
+
+    res.status(200).json({
+      data: subjectsList,
+      pagination: {
+        page: currentPage,
+        limit: limitPerPage,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limitPerPage),
+      },
+    });
   } catch (error) {
     console.log(`Error fetching subjects using GET /subjects: ${error}`);
     res.status(500).json({ message: "Failed to fetch subjects" });
