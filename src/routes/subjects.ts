@@ -1,4 +1,4 @@
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm";
 import express from "express";
 import { departments, subjects } from "../db/schema";
 import { db } from "../db";
@@ -35,7 +35,22 @@ router.get("/", async (req, res) => {
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(subjects)
-      .leftJoin(departments, eq(subjects.departmentId, departments.id));
+      .leftJoin(departments, eq(subjects.departmentId, departments.id))
+      .where(whereClause);
+
+    const totalCount = countResult[0]?.count ?? 0;
+
+    const subjectsList = await db
+      .select({
+        ...getTableColumns(subjects),
+        department: { ...getTableColumns(departments) },
+      })
+      .from(subjects)
+      .leftJoin(departments, eq(subjects.departmentId, departments.id))
+      .where(whereClause)
+      .orderBy(desc(subjects.createdAt))
+      .limit(limitPerPage)
+      .offset(offset);
   } catch (error) {
     console.log(`Error fetching subjects using GET /subjects: ${error}`);
     res.status(500).json({ message: "Failed to fetch subjects" });
