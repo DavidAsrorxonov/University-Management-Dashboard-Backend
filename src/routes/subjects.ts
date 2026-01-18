@@ -1,6 +1,7 @@
-import { ilike, or } from "drizzle-orm";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import express from "express";
 import { departments, subjects } from "../db/schema";
+import { db } from "../db";
 
 const router = express.Router();
 
@@ -27,6 +28,14 @@ router.get("/", async (req, res) => {
     if (department) {
       filterConditions.push(ilike(departments.name, `%${department}%`));
     }
+
+    const whereClause =
+      filterConditions.length > 0 ? and(...filterConditions) : undefined;
+
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(subjects)
+      .leftJoin(departments, eq(subjects.departmentId, departments.id));
   } catch (error) {
     console.log(`Error fetching subjects using GET /subjects: ${error}`);
     res.status(500).json({ message: "Failed to fetch subjects" });
